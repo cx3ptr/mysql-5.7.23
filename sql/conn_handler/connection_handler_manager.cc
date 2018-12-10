@@ -17,7 +17,7 @@
 
 #include "connection_handler_manager.h"
 
-#include "mysql/thread_pool_priv.h"    // create_thd
+#include "mysql/thread_pool_priv.h" // create_thd
 #include "mysql/service_thd_wait.h"
 #include "mysqld_error.h"              // ER_*
 #include "channel_info.h"              // Channel_info
@@ -27,21 +27,19 @@
 #include "sql_callback.h"              // MYSQL_CALLBACK
 #include "sql_class.h"                 // THD
 
-
 // Initialize static members
-uint Connection_handler_manager::connection_count= 0;
-ulong Connection_handler_manager::max_used_connections= 0;
-ulong Connection_handler_manager::max_used_connections_time= 0;
-THD_event_functions* Connection_handler_manager::event_functions= NULL;
-THD_event_functions* Connection_handler_manager::saved_event_functions= NULL;
+uint Connection_handler_manager::connection_count = 0;
+ulong Connection_handler_manager::max_used_connections = 0;
+ulong Connection_handler_manager::max_used_connections_time = 0;
+THD_event_functions *Connection_handler_manager::event_functions = NULL;
+THD_event_functions *Connection_handler_manager::saved_event_functions = NULL;
 mysql_mutex_t Connection_handler_manager::LOCK_connection_count;
 mysql_cond_t Connection_handler_manager::COND_connection_count;
 #ifndef EMBEDDED_LIBRARY
-Connection_handler_manager* Connection_handler_manager::m_instance= NULL;
-ulong Connection_handler_manager::thread_handling=
-  SCHEDULER_ONE_THREAD_PER_CONNECTION;
-uint Connection_handler_manager::max_threads= 0;
-
+Connection_handler_manager *Connection_handler_manager::m_instance = NULL;
+ulong Connection_handler_manager::thread_handling =
+    SCHEDULER_ONE_THREAD_PER_CONNECTION;
+uint Connection_handler_manager::max_threads = 0;
 
 /**
   Helper functions to allow mysys to call the thread scheduler when
@@ -72,24 +70,22 @@ static void scheduler_wait_sync_end()
                  thd_wait_end, (current_thd));
 }
 
-
 bool Connection_handler_manager::valid_connection_count()
 {
-  bool connection_accepted= true;
+  bool connection_accepted = true;
   mysql_mutex_lock(&LOCK_connection_count);
   if (connection_count > max_connections)
   {
-    connection_accepted= false;
+    connection_accepted = false;
     m_connection_errors_max_connection++;
   }
   mysql_mutex_unlock(&LOCK_connection_count);
   return connection_accepted;
 }
 
-
 bool Connection_handler_manager::check_and_incr_conn_count()
 {
-  bool connection_accepted= true;
+  bool connection_accepted = true;
   mysql_mutex_lock(&LOCK_connection_count);
   /*
     Here we allow max_connections + 1 clients to connect
@@ -101,7 +97,7 @@ bool Connection_handler_manager::check_and_incr_conn_count()
   */
   if (connection_count > max_connections)
   {
-    connection_accepted= false;
+    connection_accepted = false;
     m_connection_errors_max_connection++;
   }
   else
@@ -109,29 +105,26 @@ bool Connection_handler_manager::check_and_incr_conn_count()
     ++connection_count;
     if (connection_count > max_used_connections)
     {
-      max_used_connections= connection_count;
-      max_used_connections_time= (ulong)my_time(0);
+      max_used_connections = connection_count;
+      max_used_connections_time = (ulong)my_time(0);
     }
   }
   mysql_mutex_unlock(&LOCK_connection_count);
   return connection_accepted;
 }
 
-
 #ifdef HAVE_PSI_INTERFACE
 static PSI_mutex_key key_LOCK_connection_count;
 
-static PSI_mutex_info all_conn_manager_mutexes[]=
-{
-  { &key_LOCK_connection_count, "LOCK_connection_count", PSI_FLAG_GLOBAL}
-};
+static PSI_mutex_info all_conn_manager_mutexes[] =
+    {
+        {&key_LOCK_connection_count, "LOCK_connection_count", PSI_FLAG_GLOBAL}};
 
 static PSI_cond_key key_COND_connection_count;
 
-static PSI_cond_info all_conn_manager_conds[]=
-{
-  { &key_COND_connection_count, "COND_connection_count", PSI_FLAG_GLOBAL}
-};
+static PSI_cond_info all_conn_manager_conds[] =
+    {
+        {&key_COND_connection_count, "COND_connection_count", PSI_FLAG_GLOBAL}};
 #endif
 
 bool Connection_handler_manager::init()
@@ -143,14 +136,14 @@ bool Connection_handler_manager::init()
   */
   Per_thread_connection_handler::init();
 
-  Connection_handler *connection_handler= NULL;
+  Connection_handler *connection_handler = NULL;
   switch (Connection_handler_manager::thread_handling)
   {
   case SCHEDULER_ONE_THREAD_PER_CONNECTION:
-    connection_handler= new (std::nothrow) Per_thread_connection_handler();
+    connection_handler = new (std::nothrow) Per_thread_connection_handler();
     break;
   case SCHEDULER_NO_THREADS:
-    connection_handler= new (std::nothrow) One_thread_connection_handler();
+    connection_handler = new (std::nothrow) One_thread_connection_handler();
     break;
   default:
     DBUG_ASSERT(false);
@@ -163,7 +156,7 @@ bool Connection_handler_manager::init()
     return true;
   }
 
-  m_instance= new (std::nothrow) Connection_handler_manager(connection_handler);
+  m_instance = new (std::nothrow) Connection_handler_manager(connection_handler);
 
   if (m_instance == NULL)
   {
@@ -174,10 +167,10 @@ bool Connection_handler_manager::init()
   }
 
 #ifdef HAVE_PSI_INTERFACE
-  int count= array_elements(all_conn_manager_mutexes);
+  int count = array_elements(all_conn_manager_mutexes);
   mysql_mutex_register("sql", all_conn_manager_mutexes, count);
 
-  count= array_elements(all_conn_manager_conds);
+  count = array_elements(all_conn_manager_conds);
   mysql_cond_register("sql", all_conn_manager_conds, count);
 #endif
 
@@ -185,7 +178,7 @@ bool Connection_handler_manager::init()
                    &LOCK_connection_count, MY_MUTEX_INIT_FAST);
 
   mysql_cond_init(key_COND_connection_count, &COND_connection_count);
-  max_threads= connection_handler->get_max_threads();
+  max_threads = connection_handler->get_max_threads();
 
   // Init common callback functions.
   thr_set_lock_wait_callback(scheduler_wait_lock_begin,
@@ -212,7 +205,7 @@ void Connection_handler_manager::destroy_instance()
   if (m_instance != NULL)
   {
     delete m_instance;
-    m_instance= NULL;
+    m_instance = NULL;
     mysql_mutex_destroy(&LOCK_connection_count);
     mysql_cond_destroy(&COND_connection_count);
   }
@@ -221,24 +214,23 @@ void Connection_handler_manager::destroy_instance()
 void Connection_handler_manager::reset_max_used_connections()
 {
   mysql_mutex_lock(&LOCK_connection_count);
-  max_used_connections= connection_count;
-  max_used_connections_time= (ulong)my_time(0);
+  max_used_connections = connection_count;
+  max_used_connections_time = (ulong)my_time(0);
   mysql_mutex_unlock(&LOCK_connection_count);
 }
 
 void Connection_handler_manager::load_connection_handler(
-                                Connection_handler* conn_handler)
+    Connection_handler *conn_handler)
 {
   // We don't support loading more than one dynamic connection handler
   DBUG_ASSERT(Connection_handler_manager::thread_handling !=
               SCHEDULER_TYPES_COUNT);
-  m_saved_connection_handler= m_connection_handler;
-  m_saved_thread_handling= Connection_handler_manager::thread_handling;
-  m_connection_handler= conn_handler;
-  Connection_handler_manager::thread_handling= SCHEDULER_TYPES_COUNT;
-  max_threads= m_connection_handler->get_max_threads();
+  m_saved_connection_handler = m_connection_handler;
+  m_saved_thread_handling = Connection_handler_manager::thread_handling;
+  m_connection_handler = conn_handler;
+  Connection_handler_manager::thread_handling = SCHEDULER_TYPES_COUNT;
+  max_threads = m_connection_handler->get_max_threads();
 }
-
 
 bool Connection_handler_manager::unload_connection_handler()
 {
@@ -246,17 +238,16 @@ bool Connection_handler_manager::unload_connection_handler()
   if (m_saved_connection_handler == NULL)
     return true;
   delete m_connection_handler;
-  m_connection_handler= m_saved_connection_handler;
-  Connection_handler_manager::thread_handling= m_saved_thread_handling;
-  m_saved_connection_handler= NULL;
-  m_saved_thread_handling= 0;
-  max_threads= m_connection_handler->get_max_threads();
+  m_connection_handler = m_saved_connection_handler;
+  Connection_handler_manager::thread_handling = m_saved_thread_handling;
+  m_saved_connection_handler = NULL;
+  m_saved_thread_handling = 0;
+  max_threads = m_connection_handler->get_max_threads();
   return false;
 }
 
-
-void
-Connection_handler_manager::process_new_connection(Channel_info* channel_info)
+// 处理连接
+void Connection_handler_manager::process_new_connection(Channel_info *channel_info)
 {
   if (abort_loop || !check_and_incr_conn_count())
   {
@@ -272,22 +263,19 @@ Connection_handler_manager::process_new_connection(Channel_info* channel_info)
   }
 }
 
-
-THD* create_thd(Channel_info* channel_info)
+THD *create_thd(Channel_info *channel_info)
 {
-  THD* thd= channel_info->create_thd();
+  THD *thd = channel_info->create_thd();
   if (thd == NULL)
     channel_info->send_error_and_close_channel(ER_OUT_OF_RESOURCES, 0, false);
 
   return thd;
 }
 
-
-void destroy_channel_info(Channel_info* channel_info)
+void destroy_channel_info(Channel_info *channel_info)
 {
   delete channel_info;
 }
-
 
 void dec_connection_count()
 {
@@ -295,41 +283,37 @@ void dec_connection_count()
 }
 #endif // !EMBEDDED_LIBRARY
 
-
 extern "C"
 {
-int my_connection_handler_set(Connection_handler_functions *chf,
-                              THD_event_functions *tef)
-{
-  DBUG_ASSERT(chf != NULL && tef != NULL);
-  if (chf == NULL || tef == NULL)
-    return 1;
+  int my_connection_handler_set(Connection_handler_functions *chf,
+                                THD_event_functions *tef)
+  {
+    DBUG_ASSERT(chf != NULL && tef != NULL);
+    if (chf == NULL || tef == NULL)
+      return 1;
 
-  Plugin_connection_handler *conn_handler=
-    new (std::nothrow) Plugin_connection_handler(chf);
-  if (conn_handler == NULL)
-    return 1;
+    Plugin_connection_handler *conn_handler =
+        new (std::nothrow) Plugin_connection_handler(chf);
+    if (conn_handler == NULL)
+      return 1;
 
 #ifndef EMBEDDED_LIBRARY
-  Connection_handler_manager::get_instance()->
-    load_connection_handler(conn_handler);
+    Connection_handler_manager::get_instance()->load_connection_handler(conn_handler);
 #endif
-  Connection_handler_manager::saved_event_functions=
-    Connection_handler_manager::event_functions;
-  Connection_handler_manager::event_functions= tef;
-  return 0;
-}
+    Connection_handler_manager::saved_event_functions =
+        Connection_handler_manager::event_functions;
+    Connection_handler_manager::event_functions = tef;
+    return 0;
+  }
 
-
-int my_connection_handler_reset()
-{
-  Connection_handler_manager::event_functions=
-    Connection_handler_manager::saved_event_functions;
+  int my_connection_handler_reset()
+  {
+    Connection_handler_manager::event_functions =
+        Connection_handler_manager::saved_event_functions;
 #ifndef EMBEDDED_LIBRARY
-  return Connection_handler_manager::get_instance()->
-    unload_connection_handler();
+    return Connection_handler_manager::get_instance()->unload_connection_handler();
 #else
-  return 0;
+    return 0;
 #endif
-}
+  }
 };

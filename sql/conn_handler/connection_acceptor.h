@@ -31,14 +31,16 @@
   callback functor object would on receiving connection event
   from the client to process the connection.
 */
-template <typename Listener> class Connection_acceptor
+template <typename Listener>
+class Connection_acceptor
 {
   Listener *m_listener;
 
 public:
   Connection_acceptor(Listener *listener)
-  : m_listener(listener)
-  { }
+      : m_listener(listener)
+  {
+  }
 
   ~Connection_acceptor()
   {
@@ -58,12 +60,13 @@ public:
   /**
     Connection acceptor loop to accept connections from clients.
   */
+  //  接收客户端连接、处理连接
   void connection_event_loop()
   {
-    Connection_handler_manager *mgr= Connection_handler_manager::get_instance();
+    Connection_handler_manager *mgr = Connection_handler_manager::get_instance();
     while (!abort_loop)
     {
-      Channel_info *channel_info= m_listener->listen_for_connection_event();
+      Channel_info *channel_info = m_listener->listen_for_connection_event();
       if (channel_info != NULL)
         mgr->process_new_connection(channel_info);
     }
@@ -76,6 +79,5 @@ public:
   {
     m_listener->close_listener();
   }
-
 };
 #endif // CONNECTION_ACCEPTOR_INCLUDED

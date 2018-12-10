@@ -766,7 +766,7 @@ void set_remaining_args(int argc, char **argv)
   remaining_argc= argc;
   remaining_argv= argv;
 }
-/* 
+/*
   Multiple threads of execution use the random state maintained in global
   sql_rand to generate random numbers. sql_rnd_with_mutex use mutex
   LOCK_sql_rand to protect sql_rand across multiple instantiations that use
@@ -2633,7 +2633,7 @@ rpl_make_log_name(PSI_memory_key key,
     MY_REPLACE_EXT | MY_UNPACK_FILENAME | MY_SAFE_PATH;
 
   /* mysql_real_data_home_ptr may be null if no value of datadir has been
-     specified through command-line or througha cnf file. If that is the 
+     specified through command-line or througha cnf file. If that is the
      case we make mysql_real_data_home_ptr point to mysql_real_data_home
      which, in that case holds the default path for data-dir.
   */
@@ -3775,7 +3775,7 @@ static void init_server_query_cache()
 
   query_cache.set_min_res_unit(query_cache_min_res_unit);
   query_cache.init();
-	
+
   set_cache_size= query_cache.resize(query_cache_size);
   if (set_cache_size != query_cache_size)
   {
@@ -4757,7 +4757,7 @@ int mysqld_main(int argc, char **argv)
     unireg_abort(MYSQLD_ABORT_EXIT);
   }
 
-  /* 
+  /*
    The subsequent calls may take a long time : e.g. innodb log read.
    Thus set the long running service control manager timeout
   */
@@ -5774,7 +5774,7 @@ struct my_option my_long_options[]=
   {"default-storage-engine", 0, "The default storage engine for new tables",
    &default_storage_engine, 0, 0, GET_STR, REQUIRED_ARG,
    0, 0, 0, 0, 0, 0 },
-  {"default-tmp-storage-engine", 0, 
+  {"default-tmp-storage-engine", 0,
     "The default storage engine for new explict temporary tables",
    &default_tmp_storage_engine, 0, 0, GET_STR, REQUIRED_ARG,
    0, 0, 0, 0, 0, 0 },
@@ -5815,7 +5815,7 @@ struct my_option my_long_options[]=
   {"ignore-db-dir", OPT_IGNORE_DB_DIRECTORY,
    "Specifies a directory to add to the ignore list when collecting "
    "database names from the datadir. Put a blank argument to reset "
-   "the list accumulated so far.", 0, 0, 0, GET_STR, REQUIRED_ARG, 
+   "the list accumulated so far.", 0, 0, 0, GET_STR, REQUIRED_ARG,
    0, 0, 0, 0, 0, 0},
   {"language", 'L',
    "Client error messages in given language. May be given as a full path. "
@@ -6293,7 +6293,7 @@ static int show_slave_last_heartbeat(THD *thd, SHOW_VAR *var, char *buff)
       buff[0]='\0';
     else
     {
-      thd->variables.time_zone->gmt_sec_to_TIME(&received_heartbeat_time, 
+      thd->variables.time_zone->gmt_sec_to_TIME(&received_heartbeat_time,
         static_cast<my_time_t>(mi->last_heartbeat));
       my_datetime_to_str(&received_heartbeat_time, buff, 0);
     }
@@ -6333,7 +6333,7 @@ static int show_slave_rows_last_search_algorithm_used(THD *thd, SHOW_VAR *var, c
 {
   uint res= slave_rows_last_search_algorithm_used;
   const char* s= ((res == Rows_log_event::ROW_LOOKUP_TABLE_SCAN) ? "TABLE_SCAN" :
-                  ((res == Rows_log_event::ROW_LOOKUP_HASH_SCAN) ? "HASH_SCAN" : 
+                  ((res == Rows_log_event::ROW_LOOKUP_HASH_SCAN) ? "HASH_SCAN" :
                    "INDEX_SCAN"));
 
   var->type= SHOW_CHAR;
@@ -7327,10 +7327,10 @@ mysqld_get_one_option(int optid,
 #if defined(HAVE_OPENSSL) && !defined(EMBEDDED_LIBRARY)
   case OPT_SSL_KEY:
   case OPT_SSL_CERT:
-  case OPT_SSL_CA:  
+  case OPT_SSL_CA:
   case OPT_SSL_CAPATH:
   case OPT_SSL_CIPHER:
-  case OPT_SSL_CRL:   
+  case OPT_SSL_CRL:
   case OPT_SSL_CRLPATH:
   case OPT_TLS_VERSION:
     /*
@@ -7342,7 +7342,7 @@ mysqld_get_one_option(int optid,
     /* crl has no effect in yaSSL. */
     opt_ssl_crl= NULL;
     opt_ssl_crlpath= NULL;
-#endif /* HAVE_YASSL */   
+#endif /* HAVE_YASSL */
     break;
 #endif /* HAVE_OPENSSL */
 #ifndef EMBEDDED_LIBRARY
@@ -7532,7 +7532,7 @@ mysqld_get_one_option(int optid,
       if (push_ignored_db_dir(argument))
       {
         sql_print_error("Can't start server: "
-                        "cannot process --ignore-db-dir=%.*s", 
+                        "cannot process --ignore-db-dir=%.*s",
                         FN_REFLEN, argument);
         return 1;
       }
@@ -7882,7 +7882,7 @@ static int get_options(int *argc_ptr, char ***argv_ptr)
 
   /*
     TIMESTAMP columns get implicit DEFAULT values when
-    --explicit_defaults_for_timestamp is not set. 
+    --explicit_defaults_for_timestamp is not set.
     This behavior is deprecated now.
   */
   if (!opt_help && !global_system_variables.explicit_defaults_for_timestamp)
@@ -8029,7 +8029,7 @@ static void set_server_version(void)
 #ifdef HAVE_VALGRIND
   if (SERVER_VERSION_LENGTH - (end - server_version) >
       static_cast<int>(sizeof("-valgrind")))
-    end= my_stpcpy(end, "-valgrind"); 
+    end= my_stpcpy(end, "-valgrind");
 #endif
 #ifdef HAVE_ASAN
   if (SERVER_VERSION_LENGTH - (end - server_version) >
@@ -8331,7 +8331,7 @@ static int fix_paths(void)
   (void) my_load_path(mysql_real_data_home,mysql_real_data_home,mysql_home);
   (void) my_load_path(pidfile_name, pidfile_name_ptr, mysql_real_data_home);
 
-  convert_dirname(opt_plugin_dir, opt_plugin_dir_ptr ? opt_plugin_dir_ptr : 
+  convert_dirname(opt_plugin_dir, opt_plugin_dir_ptr ? opt_plugin_dir_ptr :
                                   get_relative_path(PLUGINDIR), NullS);
   (void) my_load_path(opt_plugin_dir, opt_plugin_dir, mysql_home);
   opt_plugin_dir_ptr= opt_plugin_dir;
@@ -8795,7 +8795,7 @@ static PSI_mutex_info all_server_mutexes[]=
   { &key_gtid_ensure_index_mutex, "Gtid_state", PSI_FLAG_GLOBAL},
   { &key_LOCK_query_plan, "THD::LOCK_query_plan", PSI_FLAG_VOLATILITY_SESSION},
   { &key_LOCK_cost_const, "Cost_constant_cache::LOCK_cost_const",
-    PSI_FLAG_GLOBAL},  
+    PSI_FLAG_GLOBAL},
   { &key_LOCK_current_cond, "THD::LOCK_current_cond", PSI_FLAG_VOLATILITY_SESSION},
   { &key_mts_temp_table_LOCK, "key_mts_temp_table_LOCK", 0},
   { &key_LOCK_reset_gtid_table, "LOCK_reset_gtid_table", PSI_FLAG_GLOBAL},
